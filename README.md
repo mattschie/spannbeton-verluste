@@ -1,4 +1,4 @@
-# Spannbetonträger — Parameterstudie
+# Spannbetonträger — Parameterstudie zu Verlusten
 
 Interaktive Lernapp zur Visualisierung der Verluste aus Ankerschlupf, elastischer Stauchung, Kriechen, Schwinden, Relaxation und Reibung.
 Work in Progress.
