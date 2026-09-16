@@ -344,7 +344,7 @@
 <header class="top">
   <div>
     <h1>Vorspannkraftverluste im Spannbetonbau</h1>
-    <div class="sub">Interaktiver Verlauf der Vorspannkraft entlang der Trägerachse</div>
+    <div class="sub">Interaktiver Verlauf der Vorspannkraft entlang der Trägerachse. Achtung: Nur für Schulung - keine Bemessung. Alle Werte sind Näherungswerte und dienen nur der Visualisierung.</div>
   </div>
   <div class="beamtag" id="beamtag">Einfeldträger · parabelförmiger Spanngliedverlauf</div>
 </header>
@@ -356,8 +356,8 @@
     <div class="section">
       <h3><span class="n">1</span> Trägergeometrie</h3>
       <div class="field">
-        <label>Spannweite L <span class="val" id="v_L">32.0 m</span></label>
-        <input type="range" id="L" min="4" max="60" step="0.5" value="32">
+        <label>Spannweite L <span class="val" id="v_L">12.5 m</span></label>
+        <input type="range" id="L" min="4" max="60" step="0.5" value="12.5">
       </div>
     </div>
 
@@ -365,12 +365,12 @@
       <h3><span class="n">2</span> Querschnitt &amp; Material</h3>
       <div class="field row2">
         <div>
-          <label>Breite b <span class="val" id="v_b">50 cm</span></label>
-          <input type="range" id="b" min="15" max="120" step="1" value="50">
+          <label>Breite b <span class="val" id="v_b">30 cm</span></label>
+          <input type="range" id="b" min="15" max="120" step="1" value="30">
         </div>
         <div>
-          <label>Höhe h <span class="val" id="v_h">140 cm</span></label>
-          <input type="range" id="h" min="20" max="250" step="1" value="140">
+          <label>Höhe h <span class="val" id="v_h">80 cm</span></label>
+          <input type="range" id="h" min="20" max="250" step="1" value="80">
         </div>
       </div>
       <div class="field">
@@ -397,8 +397,8 @@
           <small class="hint">Rechenwert für Litzen, EN 1992-1-1, 3.3.6(2) – nicht veränderlich.</small>
         </div>
         <div>
-          <label>Fläche A<sub>p</sub> <span class="val" id="v_Ap">2200 mm²</span></label>
-          <input type="range" id="Ap" min="150" max="6000" step="50" value="2200">
+          <label>Fläche A<sub>p</sub> <span class="val" id="v_Ap">750 mm²</span></label>
+          <input type="range" id="Ap" min="150" max="6000" step="50" value="750">
         </div>
       </div>
     </div>
@@ -407,18 +407,18 @@
       <h3><span class="n">3</span> Spannglied &amp; Vorspannkraft</h3>
       <div class="field row2">
         <div>
-          <label>Ausmitte Anfang e<sub>0</sub> <span class="val" id="v_e0">5 cm</span></label>
-          <input type="range" id="e0" min="-40" max="60" step="1" value="5">
+          <label>Ausmitte Anfang e<sub>0</sub> <span class="val" id="v_e0">0 cm</span></label>
+          <input type="range" id="e0" min="-40" max="60" step="1" value="0">
         </div>
         <div>
-          <label>Ausmitte Feldmitte e<sub>m</sub> <span class="val" id="v_em">60 cm</span></label>
-          <input type="range" id="em" min="-40" max="100" step="1" value="60">
+          <label>Ausmitte Feldmitte e<sub>m</sub> <span class="val" id="v_em">30 cm</span></label>
+          <input type="range" id="em" min="-40" max="100" step="1" value="30">
         </div>
       </div>
       <small class="hint">Vorzeichen: positiv = unterhalb der Schwerachse (Lage des Spannglieds im Querschnitt). Symmetrischer Parabelverlauf, e(0)=e(L).</small>
       <div class="field" style="margin-top:10px;">
-        <label>Vorspannkraft P<sub>0</sub> <span class="val" id="v_P0">2800 kN</span></label>
-        <input type="range" id="P0" min="200" max="10000" step="50" value="2800">
+        <label>Vorspannkraft P<sub>0</sub> <span class="val" id="v_P0">600 kN</span></label>
+        <input type="range" id="P0" min="200" max="10000" step="50" value="600">
       </div>
       <div id="steelcheck" class="warn" style="display:none; margin-top:6px;"></div>
     </div>
@@ -443,11 +443,11 @@
         <div class="field row2">
           <div>
             <label>Reibbeiwert μ <span class="val" id="v_mu">0.24</span></label>
-            <input type="range" id="mu" min="0.05" max="0.40" step="0.01" value="0.24">
+            <input type="range" id="mu" min="0.05" max="0.40" step="0.01" value="0.3">
           </div>
           <div>
-            <label>Wobble k <span class="val" id="v_k">0.0090 /m</span></label>
-            <input type="range" id="k" min="0" max="0.02" step="0.0005" value="0.009">
+            <label>Wobble k <span class="val" id="v_k">0.0055 /m</span></label>
+            <input type="range" id="k" min="0" max="0.02" step="0.0005" value="0.0055">
           </div>
         </div>
         <small class="hint">Planmäßiger Umlenkwinkel Θ(x) wird aus dem Spanngliedverlauf (e₀, e<sub>m</sub>) berechnet: P(x) = P₀·e<sup>−μ(Θ(x)+k·x)</sup></small>
@@ -459,8 +459,8 @@
       </div>
       <div class="losssub">
         <div class="field">
-          <label>Schlupf Δl <span class="val" id="v_slip">4.0 mm</span></label>
-          <input type="range" id="slip" min="0" max="20" step="0.5" value="4">
+          <label>Schlupf Δl <span class="val" id="v_slip">3.0 mm</span></label>
+          <input type="range" id="slip" min="0" max="20" step="0.5" value="3">
         </div>
         <small class="hint">Wirkt am aktiven Spannanker; Reibungslinie wird bis zum Blockierpunkt x<sub>E</sub> gespiegelt (Kompatibilität: Δl·E<sub>p</sub>·A<sub>p</sub> = Fläche zwischen den Kurven).</small>
       </div>
