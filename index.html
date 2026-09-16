@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vorspannkraftverluste – Spannbetonbau Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.1/chart.umd.min.js"></script>
+<style>
+
+  :root {
+    --paper: #EDF2F7;
+    --paper-grid: #D6E0EA;
+    --panel: #FFFFFF;
+    --panel-border: #C7D4E0;
+    --ink: #15304C;
+    --ink-soft: #4F6C89;
+    --ink-faint: #7E93A8;
+    --line-p0: #93A7B9;
+    --line-friction: #2A5C8A;
+    --line-final: #B5541F;
+    --line-component: #7FA8C9;
+    --line-elastic: #3F7A5C;
+    --fill-elastic: rgba(63,122,92,0.20);
+    --fill-friction: rgba(42,92,138,0.10);
+    --fill-slip: rgba(181,84,31,0.22);
+    --warn-bg: #FBEAE6;
+    --warn-text: #8A2A1D;
+    --warn-border: #E3A896;
+    --ok-bg: #E8F0EA;
+    --ok-text: #2E5C3B;
+    --future-bg: #E7ECF1;
+    --future-text: #6E8399;
+    --font-display: 'Space Grotesk', 'Arial Narrow', sans-serif;
+    --font-body: 'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0C1826;
+      --paper-grid: #16283A;
+      --panel: #122436;
+      --panel-border: #274763;
+      --ink: #E1EAF3;
+      --ink-soft: #9FB7CC;
+      --ink-faint: #6F869B;
+      --line-p0: #5E7A93;
+      --line-friction: #74B7E6;
+      --line-final: #E8935A;
+      --line-component: #3E6E8E;
+      --line-elastic: #6FBF96;
+      --fill-friction: rgba(116,183,230,0.10);
+      --fill-slip: rgba(232,147,90,0.22);
+      --fill-elastic: rgba(111,191,150,0.22);
+      --warn-bg: #3A1F1A;
+      --warn-text: #F0AD9A;
+      --warn-border: #6B392C;
+      --ok-bg: #17301F;
+      --ok-text: #9BCBA9;
+      --future-bg: #1A2A38;
+      --future-text: #7E93A8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #0C1826;
+    --paper-grid: #16283A;
+    --panel: #122436;
+    --panel-border: #274763;
+    --ink: #E1EAF3;
+    --ink-soft: #9FB7CC;
+    --ink-faint: #6F869B;
+    --line-p0: #5E7A93;
+    --line-friction: #74B7E6;
+    --line-final: #E8935A;
+    --line-component: #3E6E8E;
+    --line-elastic: #6FBF96;
+    --fill-friction: rgba(116,183,230,0.10);
+    --fill-slip: rgba(232,147,90,0.22);
+    --fill-elastic: rgba(111,191,150,0.22);
+    --warn-bg: #3A1F1A;
+    --warn-text: #F0AD9A;
+    --warn-border: #6B392C;
+    --ok-bg: #17301F;
+    --ok-text: #9BCBA9;
+    --future-bg: #1A2A38;
+    --future-text: #7E93A8;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  body {
+    background:
+      linear-gradient(var(--paper-grid) 1px, transparent 1px) 0 0/32px 32px,
+      linear-gradient(90deg, var(--paper-grid) 1px, transparent 1px) 0 0/32px 32px,
+      var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  header.top {
+    padding: 22px 28px 18px;
+    border-bottom: 1px solid var(--panel-border);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+  }
+  header.top h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 22px;
+    letter-spacing: 0.01em;
+    margin: 0;
+    color: var(--ink);
+  }
+  header.top .sub {
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    margin-top: 4px;
+  }
+  header.top .beamtag {
+    font-family: var(--font-display);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    border: 1px solid var(--panel-border);
+    padding: 5px 10px;
+    background: var(--panel);
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 22px;
+    padding: 22px 28px 48px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  aside.form {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    padding: 4px 0 10px;
+  }
+  aside.form h2.formtitle {
+    font-family: var(--font-display);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin: 0;
+    padding: 14px 18px 10px;
+    border-bottom: 1px solid var(--panel-border);
+  }
+
+  .section {
+    padding: 14px 18px 6px;
+    border-bottom: 1px solid var(--panel-border);
+  }
+  .section:last-child { border-bottom: none; }
+  .section h3 {
+    font-family: var(--font-display);
+    font-size: 13.5px;
+    font-weight: 600;
+    margin: 0 0 10px;
+    color: var(--ink);
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .section h3 .n {
+    color: var(--ink-faint);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .field { margin-bottom: 10px; }
+  .field label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-bottom: 4px;
+  }
+  .field label .val {
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    font-size: 12.5px;
+  }
+  .field input[type="number"],
+  .field select {
+    width: 100%;
+    padding: 7px 8px;
+    border: 1px solid var(--panel-border);
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 13.5px;
+  }
+  .field input[type="range"] {
+    width: 100%;
+    accent-color: var(--line-friction);
+  }
+  .field .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .field small.hint {
+    display: block;
+    color: var(--ink-faint);
+    font-size: 11.5px;
+    margin-top: 4px;
+  }
+
+  .radiogroup { display: flex; gap: 6px; }
+  .radiogroup label {
+    flex: 1;
+    text-align: center;
+    border: 1px solid var(--panel-border);
+    padding: 7px 4px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    background: var(--paper);
+  }
+  .radiogroup input { display: none; }
+  .radiogroup input:checked + span {
+    color: var(--ink);
+  }
+  .radiogroup label:has(input:checked) {
+    background: var(--panel);
+    border-color: var(--line-friction);
+    color: var(--line-friction);
+    font-weight: 600;
+  }
+
+  .lossrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 0;
+    border-top: 1px solid var(--panel-border);
+  }
+  .lossrow:first-of-type { border-top: none; }
+  .lossrow input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--line-final);
+  }
+  .lossrow .name { font-size: 13px; font-weight: 500; flex: 1; }
+  .lossrow .tag {
+    font-size: 10.5px;
+    font-family: var(--font-display);
+    letter-spacing: 0.03em;
+    padding: 2px 7px;
+    background: var(--future-bg);
+    color: var(--future-text);
+  }
+  .losssub { padding: 2px 0 10px 24px; }
+
+  main.content { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    padding: 18px 18px 10px;
+  }
+  .card h2 {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    color: var(--ink);
+  }
+  .card .cardsub { color: var(--ink-faint); font-size: 12px; margin-bottom: 10px; }
+
+  .chartwrap { position: relative; height: 380px; }
+
+  .legend-row {
+    display: flex; flex-wrap: wrap; gap: 14px 20px;
+    padding: 10px 2px 4px; font-size: 12px; color: var(--ink-soft);
+  }
+  .legend-row .item { display: flex; align-items: center; gap: 6px; }
+  .legend-row .swatch { width: 16px; height: 3px; display: inline-block; }
+  .legend-row .swatch.dot { height: 0; border-top: 2px dotted var(--line-component); width:16px;}
+  .legend-row .swatch.dash { height: 0; border-top: 2px dashed var(--line-p0); width:16px;}
+  .legend-row .fillbox { width:12px; height:12px; display:inline-block; border:1px solid var(--panel-border);}
+
+  .warn {
+    background: var(--warn-bg);
+    color: var(--warn-text);
+    border: 1px solid var(--warn-border);
+    padding: 9px 12px;
+    font-size: 12.5px;
+    margin: 6px 0 10px;
+  }
+
+  /* title block, styled after a technical drawing title block */
+  .titleblock {
+    border: 1px solid var(--panel-border);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+  }
+  @media (max-width: 620px) { .titleblock { grid-template-columns: repeat(2, 1fr); } }
+  .titleblock .cell {
+    border-right: 1px solid var(--panel-border);
+    border-bottom: 1px solid var(--panel-border);
+    padding: 9px 12px;
+  }
+  .titleblock .cell:nth-child(4n) { border-right: none; }
+  .titleblock .cell .lbl {
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: 0.03em;
+    margin-bottom: 3px;
+  }
+  .titleblock .cell .v {
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .titleblock .cell .v.accent { color: var(--line-final); }
+
+  .schematic { width: 100%; height: auto; display: block; }
+  .schematic text { font-family: var(--font-body); }
+
+  footer.note {
+    padding: 0 28px 40px;
+    color: var(--ink-faint);
+    font-size: 12px;
+    max-width: 760px;
+  }
+
+  ::selection { background: var(--line-friction); color: white; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Vorspannkraftverluste im Spannbetonbau</h1>
+    <div class="sub">Interaktiver Verlauf der Vorspannkraft entlang der Trägerachse</div>
+  </div>
+  <div class="beamtag" id="beamtag">Einfeldträger · parabelförmiger Spanngliedverlauf</div>
+</header>
+
+<div class="layout">
+  <aside class="form">
+    <h2 class="formtitle">EINGABEN</h2>
+
+    <div class="section">
+      <h3><span class="n">1</span> Trägergeometrie</h3>
+      <div class="field">
+        <label>Spannweite L <span class="val" id="v_L">32.0 m</span></label>
+        <input type="range" id="L" min="4" max="60" step="0.5" value="32">
+      </div>
+    </div>
+
+    <div class="section">
+      <h3><span class="n">2</span> Querschnitt &amp; Material</h3>
+      <div class="field row2">
+        <div>
+          <label>Breite b <span class="val" id="v_b">50 cm</span></label>
+          <input type="range" id="b" min="15" max="120" step="1" value="50">
+        </div>
+        <div>
+          <label>Höhe h <span class="val" id="v_h">140 cm</span></label>
+          <input type="range" id="h" min="20" max="250" step="1" value="140">
+        </div>
+      </div>
+      <div class="field">
+        <label>Betongüte</label>
+        <select id="concrete">
+          <option>C25/30</option><option>C30/37</option>
+          <option selected>C35/45</option><option>C40/50</option>
+          <option>C45/55</option><option>C50/60</option>
+        </select>
+        <small class="hint">E<sub>cm</sub> nach EN 1992-1-1, Tabelle 3.1, wird für die elastische Stauchung verwendet; für spätere Verluste (Kriechen &amp; Schwinden) ebenfalls benötigt.</small>
+      </div>
+      <div class="field">
+        <label>Spannstahlgüte (Litze)</label>
+        <select id="steelgrade">
+          <option value="1500/1770" selected>St 1500/1770</option>
+          <option value="1600/1860">St 1600/1860</option>
+        </select>
+        <small class="hint">f<sub>p0,1k</sub>/f<sub>pk</sub> in N/mm² nach aktuellen bauaufsichtlichen Zulassungen für 7‑drähtige Litzen.</small>
+      </div>
+      <div class="field row2">
+        <div>
+          <label>E-Modul E<sub>p</sub></label>
+          <div style="padding:7px 8px; border:1px solid var(--panel-border); background:var(--paper); color:var(--ink-soft); font-size:13.5px;">195 000 N/mm²</div>
+          <small class="hint">Rechenwert für Litzen, EN 1992-1-1, 3.3.6(2) – nicht veränderlich.</small>
+        </div>
+        <div>
+          <label>Fläche A<sub>p</sub> <span class="val" id="v_Ap">2200 mm²</span></label>
+          <input type="range" id="Ap" min="150" max="6000" step="50" value="2200">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3><span class="n">3</span> Spannglied &amp; Vorspannkraft</h3>
+      <div class="field row2">
+        <div>
+          <label>Ausmitte Anfang e<sub>0</sub> <span class="val" id="v_e0">5 cm</span></label>
+          <input type="range" id="e0" min="-40" max="60" step="1" value="5">
+        </div>
+        <div>
+          <label>Ausmitte Feldmitte e<sub>m</sub> <span class="val" id="v_em">60 cm</span></label>
+          <input type="range" id="em" min="-40" max="100" step="1" value="60">
+        </div>
+      </div>
+      <small class="hint">Vorzeichen: positiv = unterhalb der Schwerachse (Lage des Spannglieds im Querschnitt). Symmetrischer Parabelverlauf, e(0)=e(L).</small>
+      <div class="field" style="margin-top:10px;">
+        <label>Vorspannkraft P<sub>0</sub> <span class="val" id="v_P0">2800 kN</span></label>
+        <input type="range" id="P0" min="200" max="10000" step="50" value="2800">
+      </div>
+      <div id="steelcheck" class="warn" style="display:none; margin-top:6px;"></div>
+    </div>
+
+    <div class="section">
+      <h3><span class="n">4</span> Vorspannrichtung</h3>
+      <div class="radiogroup" id="tensioning">
+        <label><input type="radio" name="tens" value="left"><span>links</span></label>
+        <label><input type="radio" name="tens" value="right"><span>rechts</span></label>
+        <label><input type="radio" name="tens" value="both" checked><span>beide</span></label>
+      </div>
+    </div>
+
+    <div class="section">
+      <h3><span class="n">5</span> Verluste</h3>
+
+      <div class="lossrow">
+        <input type="checkbox" id="on_friction" checked>
+        <span class="name">Reibung</span>
+      </div>
+      <div class="losssub">
+        <div class="field row2">
+          <div>
+            <label>Reibbeiwert μ <span class="val" id="v_mu">0.24</span></label>
+            <input type="range" id="mu" min="0.05" max="0.40" step="0.01" value="0.24">
+          </div>
+          <div>
+            <label>Wobble k <span class="val" id="v_k">0.0090 /m</span></label>
+            <input type="range" id="k" min="0" max="0.02" step="0.0005" value="0.009">
+          </div>
+        </div>
+        <small class="hint">Planmäßiger Umlenkwinkel Θ(x) wird aus dem Spanngliedverlauf (e₀, e<sub>m</sub>) berechnet: P(x) = P₀·e<sup>−μ(Θ(x)+k·x)</sup></small>
+      </div>
+
+      <div class="lossrow">
+        <input type="checkbox" id="on_slip" checked>
+        <span class="name">Ankerschlupf</span>
+      </div>
+      <div class="losssub">
+        <div class="field">
+          <label>Schlupf Δl <span class="val" id="v_slip">4.0 mm</span></label>
+          <input type="range" id="slip" min="0" max="20" step="0.5" value="4">
+        </div>
+        <small class="hint">Wirkt am aktiven Spannanker; Reibungslinie wird bis zum Blockierpunkt x<sub>E</sub> gespiegelt (Kompatibilität: Δl·E<sub>p</sub>·A<sub>p</sub> = Fläche zwischen den Kurven).</small>
+      </div>
+
+      <div class="lossrow">
+        <input type="checkbox" id="on_elastic" checked>
+        <span class="name">Elastische Stauchung</span>
+      </div>
+      <div class="losssub">
+        <small class="hint">Nur die Vorspannkraft P(x) selbst (nach Reibung + Ankerschlupf) verursacht die Betonstauchung in Spanngliedhöhe: Δσ<sub>c</sub>(x) = P/A<sub>c</sub> + P·e²/I<sub>c</sub>, ΔP = A<sub>p</sub>·(E<sub>p</sub>/E<sub>cm</sub>)·Δσ<sub>c</sub>(x). Kein Eigengewicht, keine weiteren Lasten. Vereinfachung: ein Spannglied, keine Reduktion für gestaffeltes Vorspannen mehrerer Spannglieder (EC2 5.10.5.1) – bei Bedarf ergänze ich das. Querschnitt wird als Rechteck b×h angenommen.</small>
+      </div>
+
+      <div class="lossrow">
+        <input type="checkbox" disabled>
+        <span class="name" style="color:var(--ink-faint)">Kriechen &amp; Schwinden</span>
+        <span class="tag">bald verfügbar</span>
+      </div>
+      <div class="lossrow">
+        <input type="checkbox" disabled>
+        <span class="name" style="color:var(--ink-faint)">Relaxation</span>
+        <span class="tag">bald verfügbar</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="content">
+
+    <div class="card">
+      <h2>Vorspannkraft entlang der Trägerachse</h2>
+      <div class="cardsub">x = Abstand vom linken Trägerende [m] · P(x) = Vorspannkraft [kN]</div>
+      <div id="warnbox"></div>
+      <div class="chartwrap"><canvas id="chart"></canvas></div>
+      <div class="legend-row">
+        <span class="item"><span class="swatch dash"></span> P₀ (Ausgangskraft)</span>
+        <span class="item"><span class="swatch" style="background:var(--line-friction)"></span> nach Reibung</span>
+        <span class="item"><span class="swatch" style="background:var(--line-final)"></span> nach Reibung + Ankerschlupf</span>
+        <span class="item" id="legend-elastic" style="display:none"><span class="swatch" style="background:var(--line-elastic)"></span> + elast. Stauchung</span>
+        <span class="item" id="legend-components" style="display:none"><span class="swatch dot"></span> Einzelkurven je Spannende</span>
+        <span class="item"><span class="fillbox" style="background:var(--fill-friction)"></span> Reibungsverlust</span>
+        <span class="item"><span class="fillbox" style="background:var(--fill-slip)"></span> Schlupfverlust</span>
+        <span class="item" id="legend-elasticfill" style="display:none"><span class="fillbox" style="background:var(--fill-elastic)"></span> Stauchungsverlust</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Kennwerte</h2>
+      <div class="cardsub">Zusammenfassung der berechneten Vorspannkräfte und Verlustlängen</div>
+      <div class="titleblock" id="titleblock"></div>
+    </div>
+
+    <div class="card">
+      <h2>Spanngliedverlauf</h2>
+      <div class="cardsub">Schematische Seitenansicht · Ausmitte relativ zur Schwerachse</div>
+      <svg class="schematic" id="schematic" viewBox="0 0 900 220" width="900" height="220"></svg>
+    </div>
+
+  </main>
+</div>
+
+<footer class="note">
+  Lehrmittel zur Veranschaulichung. Reibungs- und Ankerschlupfverluste nach dem Grundmodell der EN&nbsp;1992-1-1, 5.10.5.2 (Euler'sches Reibungsgesetz). Für die Bemessung realer Bauteile sind die gültigen Normen und Zulassungen des Spannverfahrens maßgebend.
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- persistence (per-viewer convenience only) ----------
+  const STORE_KEY = "spannbeton-visualizer-v1";
+  function loadStored(){
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch(e){ return null; }
+  }
+  function saveStored(state){
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch(e){}
+  }
+
+  // ---------- steel grade table (strand/Litze only, verified characteristic values) ----------
+  const STEEL_GRADES = {
+    "1500/1770": { fp01k: 1500, fpk: 1770 },
+    "1600/1860": { fp01k: 1600, fpk: 1860 },
+  };
+  const EP_STRAND = 195000; // N/mm^2, fixed Rechenwert for strands (EN 1992-1-1 3.3.6(2))
+
+  // ---------- concrete grade table (EN 1992-1-1, Table 3.1) ----------
+  const ECM_TABLE = {
+    "C25/30": 31000, "C30/37": 33000, "C35/45": 34000,
+    "C40/50": 35000, "C45/55": 36000, "C50/60": 37000,
+  }; // N/mm^2
+  const GAMMA_CONCRETE = 25000; // N/m^3, EN 1991-1-1 unit weight of normal-weight reinforced/prestressed concrete
+
+  // ---------- element refs ----------
+  const els = {
+    L: document.getElementById('L'),
+    b: document.getElementById('b'),
+    h: document.getElementById('h'),
+    concrete: document.getElementById('concrete'),
+    steelgrade: document.getElementById('steelgrade'),
+    Ap: document.getElementById('Ap'),
+    e0: document.getElementById('e0'),
+    em: document.getElementById('em'),
+    P0: document.getElementById('P0'),
+    mu: document.getElementById('mu'),
+    k: document.getElementById('k'),
+    slip: document.getElementById('slip'),
+    on_friction: document.getElementById('on_friction'),
+    on_slip: document.getElementById('on_slip'),
+    on_elastic: document.getElementById('on_elastic'),
+  };
+  const tensRadios = document.querySelectorAll('input[name="tens"]');
+
+  function getTensioning(){
+    for (const r of tensRadios) if (r.checked) return r.value;
+    return 'both';
+  }
+
+  // ---------- restore last session ----------
+  (function restore(){
+    const s = loadStored();
+    if (!s) return;
+    try {
+      for (const key of ['L','b','h','Ap','e0','em','P0','mu','k','slip']) {
+        if (s[key] !== undefined && els[key]) els[key].value = s[key];
+      }
+      if (s.concrete) els.concrete.value = s.concrete;
+      if (s.steelgrade) els.steelgrade.value = s.steelgrade;
+      if (s.on_friction !== undefined) els.on_friction.checked = s.on_friction;
+      if (s.on_slip !== undefined) els.on_slip.checked = s.on_slip;
+      if (s.on_elastic !== undefined) els.on_elastic.checked = s.on_elastic;
+      if (s.tens) {
+        for (const r of tensRadios) r.checked = (r.value === s.tens);
+      }
+    } catch(e){}
+  })();
+
+  // ---------- math core ----------
+  function eccentricity(x, L, e0, em) {
+    return e0 + 4*(em-e0)*(x/L)*(1-x/L);
+  }
+  function buildProfile(L, e0, em, N) {
+    N = N || 600;
+    const xs = new Array(N+1), es = new Array(N+1);
+    for (let i=0;i<=N;i++){ const x = L*i/N; xs[i]=x; es[i]=eccentricity(x,L,e0,em); }
+    return {xs, es};
+  }
+  function cumulativeAngleFromLeft(xs, es) {
+    const n = xs.length, slopes = new Array(n);
+    for (let i=0;i<n;i++){
+      if (i===0) slopes[i] = (es[1]-es[0])/(xs[1]-xs[0]);
+      else if (i===n-1) slopes[i] = (es[n-1]-es[n-2])/(xs[n-1]-xs[n-2]);
+      else slopes[i] = (es[i+1]-es[i-1])/(xs[i+1]-xs[i-1]);
+    }
+    const theta = new Array(n).fill(0);
+    for (let i=1;i<n;i++) theta[i] = theta[i-1] + Math.abs(slopes[i]-slopes[i-1]);
+    return theta;
+  }
+  function interp(xs, ys, x) {
+    const n = xs.length;
+    if (x <= xs[0]) return ys[0];
+    if (x >= xs[n-1]) return ys[n-1];
+    let lo=0, hi=n-1;
+    while (hi-lo>1){ const mid=(lo+hi)>>1; if (xs[mid]<=x) lo=mid; else hi=mid; }
+    const t=(x-xs[lo])/(xs[hi]-xs[lo]);
+    return ys[lo] + t*(ys[hi]-ys[lo]);
+  }
+  // friction curves from left jack (PL) and right jack (PR), over global x in [0,L]
+  function computeFriction(L, P0, e0, em, mu, k) {
+    const {xs, es} = buildProfile(L, e0, em);
+    const thetaL = cumulativeAngleFromLeft(xs, es);
+    const total = thetaL[thetaL.length-1];
+    const PL = xs.map((x,i) => P0 * Math.exp(-mu*(thetaL[i] + k*x)));
+    const PR = xs.map((x,i) => {
+      const thetaR = total - thetaL[i];
+      return P0 * Math.exp(-mu*(thetaR + k*(L-x)));
+    });
+    return {xs, es, PL, PR};
+  }
+  // Anchor-slip (Keilschlupf) — standard "linearisierte Betrachtung" taught for the
+  // Blockierpunkt construction: within [0, xE] the loss is treated as a straight line
+  // that (a) meets the real friction curve P1 at x = xE (continuity) and (b) whose
+  // compatibility condition xE*(P1(0)-P1(xE)) = deltaL*Ep*Ap fixes xE. This reproduces
+  // exactly the textbook result deltaP(anchor) = 2*Ap*Ep*deltaL / xE, while still using
+  // the actual (curved) friction curve's values at the two boundary points.
+  function solveSlipLinear(xs, P1, target, xEmax) {
+    const P1_0 = interp(xs, P1, 0);
+    if (target <= 0 || xEmax <= 0) return {xE:0, clamped:false, p:0, P1_0};
+    function g(xE){ return xE * (P1_0 - interp(xs, P1, xE)); }
+    const gHi = g(xEmax);
+    let xE, clamped;
+    if (gHi < target) {
+      // Compatibility can't be fully satisfied within the allowed domain (xEmax) —
+      // still return the best partial linear approximation up to xEmax, rather than
+      // silently dropping the slip effect. The caller surfaces this as an approximation.
+      xE = xEmax; clamped = true;
+    } else {
+      let lo=0, hi=xEmax;
+      for (let it=0; it<60; it++){
+        const mid = 0.5*(lo+hi);
+        if (g(mid) < target) lo=mid; else hi=mid;
+      }
+      xE = 0.5*(lo+hi); clamped = false;
+    }
+    const p1xE = interp(xs, P1, xE);
+    const p = xE>0 ? (P1_0 - p1xE) / xE : 0; // magnitude of the mirrored (linearised) loss gradient
+    return {xE, clamped, p, P1_0, p1xE};
+  }
+  function P2linear(P1_0, p, xE, x) {
+    return (P1_0 - 2*p*xE) + p*x;
+  }
+
+  function computeAll() {
+    const L = parseFloat(els.L.value);
+    const b = parseFloat(els.b.value); // cm
+    const h = parseFloat(els.h.value); // cm
+    const e0 = parseFloat(els.e0.value)/100; // cm -> m
+    const em = parseFloat(els.em.value)/100;
+    const P0 = parseFloat(els.P0.value)*1000; // kN -> N
+    const mu = parseFloat(els.mu.value);
+    const k = parseFloat(els.k.value);
+    const Ep = EP_STRAND*1e6; // N/mm^2 -> Pa
+    const Ap_mm2 = parseFloat(els.Ap.value);
+    const Ap = Ap_mm2*1e-6; // mm^2 -> m^2
+    const slip = parseFloat(els.slip.value)/1000; // mm -> m
+    const tens = getTensioning();
+    const frictionOn = els.on_friction.checked;
+    const slipOn = els.on_slip.checked;
+
+    const grade = STEEL_GRADES[els.steelgrade.value] || STEEL_GRADES["1500/1770"];
+    const sigmaP0 = (P0/1000) / Ap_mm2 * 1000; // N/mm^2  (P0[N]/Ap[mm^2])
+    const sigmaLimit = Math.min(0.8*grade.fpk, 0.9*grade.fp01k); // EN 1992-1-1 5.10.2.1
+    const steelOk = sigmaP0 <= sigmaLimit;
+
+    const {xs, es, PL, PR} = computeFriction(L, P0, e0, em, frictionOn ? mu : 0, frictionOn ? k : 0);
+
+    // friction-only curve per chosen tensioning mode
+    let Pfric;
+    if (tens === 'left') Pfric = PL.slice();
+    else if (tens === 'right') Pfric = PR.slice();
+    else Pfric = xs.map((_,i) => Math.max(PL[i], PR[i]));
+
+    const target = slip * Ep * Ap;
+    let xEleft = 0, xEright = 0, clampedLeft = false, clampedRight = false;
+    let PfinalLeft = PL.slice(), PfinalRight = PR.slice();
+
+    const leftActive = (tens === 'left' || tens === 'both');
+    const rightActive = (tens === 'right' || tens === 'both');
+    const bothMode = leftActive && rightActive;
+    // With both ends tensioned, the tendon geometry/friction is symmetric (e(0)=e(L),
+    // constant mu/k), so the two anchors' influence naturally meets at midspan. Capping
+    // each side's search domain there keeps each anchor's mirrored line confined to the
+    // half of the beam it actually governs — without the cap, an overreaching mirror line
+    // from one anchor could out-compete the other past the meeting point and produce a
+    // spurious dip in the combined (max of both) curve, which is not physical.
+    const xEmaxPerSide = bothMode ? L/2 : L;
+
+    let deltaPanchorLeft = 0, deltaPanchorRight = 0;
+
+    if (slipOn && leftActive) {
+      const r = solveSlipLinear(xs, PL, target, xEmaxPerSide);
+      xEleft = r.xE; clampedLeft = r.clamped;
+      if (xEleft > 0) {
+        PfinalLeft = xs.map((x,i) => x <= xEleft ? P2linear(r.P1_0, r.p, xEleft, x) : PL[i]);
+        deltaPanchorLeft = 2 * r.p * xEleft;
+      }
+    }
+    if (slipOn && rightActive) {
+      // local coordinate s = distance from right anchor
+      const xs2 = xs.map(x => L-x).slice().reverse();
+      const PR2 = PR.slice().reverse();
+      const r = solveSlipLinear(xs2, PR2, target, xEmaxPerSide);
+      xEright = r.xE; clampedRight = r.clamped;
+      if (xEright > 0) {
+        PfinalRight = xs.map((x,i) => {
+          const s = L - x; // distance from right anchor
+          return s <= xEright ? P2linear(r.P1_0, r.p, xEright, s) : PR[i];
+        });
+        deltaPanchorRight = 2 * r.p * xEright;
+      }
+    }
+
+    let Pfinal;
+    if (tens === 'left') Pfinal = PfinalLeft;
+    else if (tens === 'right') Pfinal = PfinalRight;
+    else Pfinal = xs.map((_,i) => Math.max(PfinalLeft[i], PfinalRight[i]));
+
+    const overlap = bothMode && slipOn && (clampedLeft || clampedRight);
+    const eccentricityOutOfSection = Math.abs(e0*100) > h/2 || Math.abs(em*100) > h/2;
+
+    // ---- elastic shortening (elastische Betonstauchung) ----
+    // Rectangular section b x h. Only stresses/strains from the prestressing force
+    // itself are considered (no self-weight or other loads). Single-tendon
+    // simplification (no (n-1)/(2n) sequential-tensioning reduction factor).
+    const elasticOn = els.on_elastic.checked;
+    const Ecm_MPa = ECM_TABLE[els.concrete.value] || ECM_TABLE["C35/45"];
+    const Ecm = Ecm_MPa * 1e6; // Pa
+    const b_m = b/100, h_m = h/100;
+    const Ac = b_m*h_m;           // m^2
+    const Ic = b_m*Math.pow(h_m,3)/12; // m^4
+    let PfinalElastic = Pfinal.slice();
+    if (elasticOn) {
+      PfinalElastic = xs.map((x,i) => {
+        const Px = Pfinal[i];
+        const e = es[i];
+        const dSigmaC = Px/Ac + Px*e*e/Ic; // Pa, concrete stress at tendon level from P(x) alone
+        const dP = Ap*(Ep/Ecm)*dSigmaC;
+        return Px - dP;
+      });
+    }
+
+    return {
+      L, b, h, e0, em, P0, xs, es, PL, PR, Pfric, Pfinal, PfinalElastic,
+      xEleft, xEright, clampedLeft, clampedRight, overlap, eccentricityOutOfSection,
+      deltaPanchorLeft, deltaPanchorRight, elasticOn, Ac, Ic, Ecm_MPa,
+      tens, frictionOn, slipOn,
+      sigmaP0, sigmaLimit, steelOk, grade
+    };
+  }
+
+  // ---------- chart ----------
+  const ctx = document.getElementById('chart').getContext('2d');
+  let chart = null;
+  function styleVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  function buildChart(res) {
+    const N = res.xs.length;
+    const labels = res.xs.map(x => x.toFixed(1));
+    const p0line = res.xs.map(()=> res.P0/1000);
+    const pfric = res.Pfric.map(v => v/1000);
+    const pfinal = res.Pfinal.map(v => v/1000);
+    const pelastic = res.PfinalElastic.map(v => v/1000);
+
+    const datasets = [
+      {
+        label: 'P0',
+        data: p0line,
+        borderColor: styleVar('--line-p0'),
+        borderDash: [5,4],
+        borderWidth: 1.5,
+        pointRadius: 0,
+        fill: false,
+        order: 5,
+      },
+      {
+        label: 'Nach Reibung',
+        data: pfric,
+        borderColor: styleVar('--line-friction'),
+        borderWidth: 2.2,
+        pointRadius: 0,
+        fill: 0,
+        backgroundColor: styleVar('--fill-friction'),
+        order: 3,
+        tension: 0.15,
+      },
+      {
+        label: 'Nach Reibung + Ankerschlupf',
+        data: pfinal,
+        borderColor: styleVar('--line-final'),
+        borderWidth: res.elasticOn ? 1.6 : 2.4,
+        pointRadius: 0,
+        fill: 1,
+        backgroundColor: styleVar('--fill-slip'),
+        order: 2,
+        tension: 0.15,
+      },
+    ];
+
+    if (res.elasticOn) {
+      datasets.push({
+        label: 'Nach Reibung + Ankerschlupf + elast. Stauchung',
+        data: pelastic,
+        borderColor: styleVar('--line-elastic'),
+        borderWidth: 2.4,
+        pointRadius: 0,
+        fill: 2,
+        backgroundColor: styleVar('--fill-elastic'),
+        order: 1,
+        tension: 0.15,
+      });
+    }
+    document.getElementById('legend-elastic').style.display = res.elasticOn ? 'inline-flex' : 'none';
+    document.getElementById('legend-elasticfill').style.display = res.elasticOn ? 'inline-flex' : 'none';
+
+    if (res.tens === 'both') {
+      datasets.push({
+        label: 'Vorspannen von links',
+        data: res.PL.map(v=>v/1000),
+        borderColor: styleVar('--line-component'),
+        borderWidth: 1.2,
+        borderDash: [2,3],
+        pointRadius: 0,
+        fill: false,
+        order: 4,
+      });
+      datasets.push({
+        label: 'Vorspannen von rechts',
+        data: res.PR.map(v=>v/1000),
+        borderColor: styleVar('--line-component'),
+        borderWidth: 1.2,
+        borderDash: [2,3],
+        pointRadius: 0,
+        fill: false,
+        order: 4,
+      });
+      document.getElementById('legend-components').style.display = 'inline-flex';
+    } else {
+      document.getElementById('legend-components').style.display = 'none';
+    }
+
+    const cfg = {
+      type: 'line',
+      data: { labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 250 },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => 'x = ' + items[0].label + ' m',
+              label: (item) => item.dataset.label + ': ' + item.formattedValue + ' kN',
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'x [m]', color: styleVar('--ink-soft') },
+            ticks: { color: styleVar('--ink-faint'), maxTicksLimit: 12 },
+            grid: { color: styleVar('--paper-grid') },
+          },
+          y: {
+            title: { display: true, text: 'P(x) [kN]', color: styleVar('--ink-soft') },
+            ticks: { color: styleVar('--ink-faint') },
+            grid: { color: styleVar('--paper-grid') },
+            beginAtZero: false,
+          }
+        }
+      }
+    };
+
+    if (chart) { chart.destroy(); }
+    chart = new Chart(ctx, cfg);
+  }
+
+  // ---------- results title block ----------
+  function fmt(n, d) { return n.toLocaleString('de-DE', {minimumFractionDigits:d, maximumFractionDigits:d}); }
+
+  function updateTitleblock(res) {
+    const tb = document.getElementById('titleblock');
+    const P0 = res.P0/1000;
+    const finalCurve = res.elasticOn ? res.PfinalElastic : res.Pfinal;
+    const p_x0 = interp(res.xs, finalCurve, 0)/1000;
+    const p_xm = interp(res.xs, finalCurve, res.L/2)/1000;
+    const p_xL = interp(res.xs, finalCurve, res.L)/1000;
+    const lossMid = P0 - p_xm;
+    const lossMidPct = (lossMid/P0*100);
+
+    const cells = [
+      ['P₀ · Ausgangskraft', fmt(P0,0)+' kN'],
+      ['P(x=0)', fmt(p_x0,0)+' kN'],
+      ['P(x=L/2)', fmt(p_xm,0)+' kN'],
+      ['P(x=L)', fmt(p_xL,0)+' kN'],
+      ['Verlust in Feldmitte', fmt(lossMid,0)+' kN  ('+fmt(lossMidPct,1)+' %)'],
+      ['Spannweite L', fmt(res.L,1)+' m'],
+      ['σ<sub>p0</sub> = P₀/A<sub>p</sub>', fmt(res.sigmaP0,0)+' N/mm² (Grenze '+fmt(res.sigmaLimit,0)+')'],
+    ];
+    if (res.slipOn) {
+      if (res.tens==='left' || res.tens==='both') {
+        cells.push(['Blockierpunkt x_E,links', fmt(res.xEleft,2)+' m'+(res.clampedLeft?' *':'')]);
+        cells.push(['ΔP Schlupf, links (2·A_p·E_p·Δl/x_E)', fmt(res.deltaPanchorLeft/1000,0)+' kN'+(res.clampedLeft?' *':'')]);
+      }
+      if (res.tens==='right' || res.tens==='both') {
+        cells.push(['Blockierpunkt x_E,rechts', fmt(res.xEright,2)+' m'+(res.clampedRight?' *':'')]);
+        cells.push(['ΔP Schlupf, rechts (2·A_p·E_p·Δl/x_E)', fmt(res.deltaPanchorRight/1000,0)+' kN'+(res.clampedRight?' *':'')]);
+      }
+    }
+    if (res.elasticOn) {
+      const dEl0 = (interp(res.xs,res.Pfinal,0) - interp(res.xs,res.PfinalElastic,0))/1000;
+      const dElM = (interp(res.xs,res.Pfinal,res.L/2) - interp(res.xs,res.PfinalElastic,res.L/2))/1000;
+      cells.push(['ΔP elast. Stauchung, x=0', fmt(dEl0,1)+' kN']);
+      cells.push(['ΔP elast. Stauchung, x=L/2', fmt(dElM,1)+' kN']);
+      cells.push(['E<sub>cm</sub> (Betongüte)', fmt(res.Ecm_MPa,0)+' N/mm²']);
+    }
+
+    tb.innerHTML = cells.map(([l,v]) => (
+      '<div class="cell"><div class="lbl">'+l+'</div><div class="v accent">'+v+'</div></div>'
+    )).join('');
+  }
+
+  function updateSteelCheck(res) {
+    const box = document.getElementById('steelcheck');
+    if (res.steelOk) {
+      box.style.display = 'none';
+      return;
+    }
+    box.style.display = 'block';
+    box.innerHTML = 'σ<sub>p0</sub> = '+fmt(res.sigmaP0,0)+' N/mm² überschreitet die zulässige Höchstspannung '+
+      fmt(res.sigmaLimit,0)+' N/mm² = min(0,8·f<sub>pk</sub>; 0,9·f<sub>p0,1k</sub>) für St '+
+      res.grade.fp01k+'/'+res.grade.fpk+' (EN 1992-1-1, 5.10.2.1). P₀ verringern oder A<sub>p</sub> vergrößern.';
+  }
+
+  function updateWarnings(res) {
+    const box = document.getElementById('warnbox');
+    const msgs = [];
+    const bothMode = res.tens === 'both';
+    if (res.slipOn && res.clampedLeft) {
+      msgs.push(bothMode
+        ? 'Der angegebene Ankerschlupf links lässt sich innerhalb der halben Trägerlänge (bis Feldmitte) nicht vollständig über Reibung abbauen. x_E,links wurde auf L/2 begrenzt (markiert mit *); die dargestellte Kurve ist dort eine Näherung, keine exakte Lösung. Δl verringern oder μ/k erhöhen, um das zu vermeiden.'
+        : 'Der angegebene Ankerschlupf links lässt sich über die gesamte Trägerlänge nicht vollständig über Reibung abbauen (x_E würde über L hinausreichen). x_E wurde auf L begrenzt (markiert mit *) und die Kurve ist eine Näherung. Δl, μ oder k prüfen.');
+    }
+    if (res.slipOn && res.clampedRight) {
+      msgs.push(bothMode
+        ? 'Der angegebene Ankerschlupf rechts lässt sich innerhalb der halben Trägerlänge nicht vollständig über Reibung abbauen – siehe Hinweis links.'
+        : 'Der angegebene Ankerschlupf rechts lässt sich über die gesamte Trägerlänge nicht vollständig über Reibung abbauen – siehe Hinweis links.');
+    }
+    if (res.eccentricityOutOfSection) msgs.push('Die gewählte Ausmitte (e₀ oder e_m) liegt außerhalb des halben Querschnitts (h/2 = '+(res.h/2).toFixed(0)+' cm) – das Spannglied läge geometrisch außerhalb des Betonquerschnitts. h vergrößern oder Ausmitte verringern.');
+    box.innerHTML = msgs.map(m => '<div class="warn">'+m+'</div>').join('');
+  }
+
+  // ---------- tendon schematic ----------
+  function updateSchematic(res) {
+    const svg = document.getElementById('schematic');
+    const W = 900, H = 220;
+    const marginX = 60;
+    const beamHpx = 100;                    // fixed pixel height representing the ACTUAL h -> keeps proportions physically correct
+    const beamTop = (H - beamHpx)/2 + 5;
+    const beamBot = beamTop + beamHpx;
+    const usableW = W - 2*marginX;
+
+    const L = res.L;
+    const h_cm = res.h;
+    const pxPerCm = beamHpx / h_cm;          // physically accurate scale: e in cm -> px, tied to real h
+    const centroidY = beamTop + beamHpx/2;
+
+    function xToPx(x){ return marginX + (x/L)*usableW; }
+    function eToPx(e_m){ return centroidY + (e_m*100)*pxPerCm; } // e given in meters
+
+    const N = 60;
+    let pathD = '';
+    for (let i=0;i<=N;i++){
+      const x = L*i/N;
+      const e = res.e0 + 4*(res.em-res.e0)*(x/L)*(1-x/L);
+      const px = xToPx(x), py = eToPx(e);
+      pathD += (i===0? 'M':'L') + px.toFixed(1) + ',' + py.toFixed(1) + ' ';
+    }
+
+    const ink = styleVar('--ink'), inksoft = styleVar('--ink-soft'), faint = styleVar('--ink-faint');
+    const lineFinal = styleVar('--line-final'), fillSlip = styleVar('--fill-slip');
+
+    let markers = '';
+    function slipMarker(xE, fromLeft){
+      if (!res.slipOn || xE<=0) return '';
+      const x1 = fromLeft ? 0 : L - xE;
+      const x2 = fromLeft ? xE : L;
+      const px1 = xToPx(x1), px2 = xToPx(x2);
+      return '<rect x="'+px1.toFixed(1)+'" y="'+beamTop+'" width="'+(px2-px1).toFixed(1)+'" height="'+beamHpx+'" fill="'+fillSlip+'" />';
+    }
+    markers += slipMarker(res.xEleft, true);
+    markers += slipMarker(res.xEright, false);
+
+    svg.innerHTML = `
+      ${markers}
+      <rect x="${marginX}" y="${beamTop}" width="${usableW}" height="${beamHpx}" fill="none" stroke="${ink}" stroke-width="1.5"/>
+      <line x1="${marginX}" y1="${centroidY}" x2="${W-marginX}" y2="${centroidY}" stroke="${faint}" stroke-width="1" stroke-dasharray="4,3"/>
+      <path d="${pathD}" fill="none" stroke="${lineFinal}" stroke-width="2.5"/>
+      <circle cx="${xToPx(0)}" cy="${eToPx(res.e0)}" r="3.5" fill="${lineFinal}"/>
+      <circle cx="${xToPx(L)}" cy="${eToPx(res.e0)}" r="3.5" fill="${lineFinal}"/>
+      <circle cx="${xToPx(L/2)}" cy="${eToPx(res.em)}" r="3.5" fill="${lineFinal}"/>
+      <text x="${xToPx(0)}" y="${beamBot+18}" font-size="11" fill="${inksoft}" text-anchor="start">e₀ = ${(res.e0*100).toFixed(0)} cm</text>
+      <text x="${xToPx(L/2)}" y="${beamBot+18}" font-size="11" fill="${inksoft}" text-anchor="middle">e_m = ${(res.em*100).toFixed(0)} cm</text>
+      <text x="${xToPx(L)}" y="${beamBot+18}" font-size="11" fill="${inksoft}" text-anchor="end">e₀ = ${(res.e0*100).toFixed(0)} cm</text>
+      <text x="${marginX}" y="${beamTop-10}" font-size="11" fill="${faint}">x = 0</text>
+      <text x="${W-marginX}" y="${beamTop-10}" font-size="11" fill="${faint}" text-anchor="end">x = L = ${L.toFixed(1)} m</text>
+      <text x="${W-marginX}" y="${centroidY+4}" font-size="10.5" fill="${faint}" text-anchor="end">h = ${h_cm.toFixed(0)} cm</text>
+      ${res.slipOn && (res.tens==='left'||res.tens==='both') ? `<text x="${xToPx(Math.min(res.xEleft,L))}" y="${beamBot+34}" font-size="10.5" fill="${lineFinal}" text-anchor="middle">x_E,links=${res.xEleft.toFixed(2)} m</text>` : ''}
+      ${res.slipOn && (res.tens==='right'||res.tens==='both') ? `<text x="${xToPx(Math.max(L-res.xEright,0))}" y="${beamBot+34}" font-size="10.5" fill="${lineFinal}" text-anchor="middle">x_E,rechts=${res.xEright.toFixed(2)} m</text>` : ''}
+    `;
+  }
+
+  // ---------- wiring ----------
+  function syncLabels(){
+    document.getElementById('v_L').textContent = parseFloat(els.L.value).toFixed(1)+' m';
+    document.getElementById('v_b').textContent = els.b.value+' cm';
+    document.getElementById('v_h').textContent = els.h.value+' cm';
+    document.getElementById('v_Ap').textContent = els.Ap.value+' mm²';
+    document.getElementById('v_e0').textContent = els.e0.value+' cm';
+    document.getElementById('v_em').textContent = els.em.value+' cm';
+    document.getElementById('v_P0').textContent = els.P0.value+' kN';
+    document.getElementById('v_mu').textContent = parseFloat(els.mu.value).toFixed(2);
+    document.getElementById('v_k').textContent = parseFloat(els.k.value).toFixed(4)+' /m';
+    document.getElementById('v_slip').textContent = parseFloat(els.slip.value).toFixed(1)+' mm';
+  }
+
+  function persist(){
+    const state = { tens: getTensioning(), concrete: els.concrete.value, steelgrade: els.steelgrade.value,
+      on_friction: els.on_friction.checked, on_slip: els.on_slip.checked, on_elastic: els.on_elastic.checked };
+    for (const key of ['L','b','h','Ap','e0','em','P0','mu','k','slip']) state[key] = els[key].value;
+    saveStored(state);
+  }
+
+  let pending = null;
+  function update(){
+    syncLabels();
+    let res;
+    try {
+      res = computeAll();
+    } catch(err) {
+      document.getElementById('warnbox').innerHTML =
+        '<div class="warn">Berechnung fehlgeschlagen: '+err.message+'</div>';
+      return;
+    }
+
+    const warnbox = document.getElementById('warnbox');
+    const extraWarnings = [];
+
+    if (typeof Chart === 'undefined') {
+      extraWarnings.push('Die Diagramm-Bibliothek (Chart.js) konnte nicht geladen werden – das Diagramm bleibt leer. Bitte Seite neu laden; falls das Problem bestehen bleibt, liegt es an der Netzwerkverbindung zum Skript-Host.');
+    } else {
+      try { buildChart(res); }
+      catch(err) { extraWarnings.push('Diagramm konnte nicht gezeichnet werden: '+err.message); }
+    }
+
+    try { updateTitleblock(res); }
+    catch(err) { extraWarnings.push('Kennwerte konnten nicht berechnet werden: '+err.message); }
+
+    try { updateWarnings(res); }
+    catch(err) { extraWarnings.push('Warnprüfung fehlgeschlagen: '+err.message); }
+
+    try { updateSchematic(res); }
+    catch(err) { extraWarnings.push('Spanngliedverlauf konnte nicht gezeichnet werden: '+err.message); }
+
+    try { updateSteelCheck(res); }
+    catch(err) { extraWarnings.push('Spannstahl-Grenzwertprüfung fehlgeschlagen: '+err.message); }
+
+    if (extraWarnings.length) {
+      warnbox.innerHTML += extraWarnings.map(m => '<div class="warn">'+m+'</div>').join('');
+    }
+
+    try { persist(); } catch(err) {}
+  }
+  function scheduleUpdate(){
+    if (pending) cancelAnimationFrame(pending);
+    pending = requestAnimationFrame(update);
+  }
+
+  Object.values(els).forEach(el => {
+    if (!el) return;
+    el.addEventListener('input', scheduleUpdate);
+    el.addEventListener('change', scheduleUpdate);
+  });
+  tensRadios.forEach(r => r.addEventListener('change', scheduleUpdate));
+
+  update();
+})();
+</script>
+</body>
+</html>
